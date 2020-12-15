@@ -1,5 +1,5 @@
 [package]
-name = "ZOA"
+name = "wxoa"
 version = "0.1.0"
 authors = ["zayfen <zhangyunfeng0101@gmail.com>"]
 edition = "2018"
