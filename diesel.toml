@@ -1,0 +1,4 @@
+[print_schema]
+file = "src/schema.rs"
+filter = { only_tables = ["t_user_info", "t_user_details_info"] }
+import_types = ["diesel::sql_types::*"]

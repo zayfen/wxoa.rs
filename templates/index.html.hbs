@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>瓶子人力管理系统</title>
+</head>
+
+<style>
+  table, td {
+    border: 1px solid #333;
+  }
+</style>
+
+<body>
+  <table style="border: 1px solid #333">
+    <thead>
+      <tr>
+        <th>OpenId</th>
+        <th>姓名</th>
+        <th>手机</th>
+        <th>年假</th>
+        <th>调休</th>
+        <th>状态</th>
+        <th>备注</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each this}}
+        <tr>
+          <td>{{f_open_id}}</td>
+          <td>{{f_name}}</td>
+          <td>{{f_mobile}}</td>
+          <td>{{f_annual_leave_days}}</td>
+          <td>{{f_rest_days}}</td>
+          <td>{{f_state}}</td>
+          <td>{{f_remark}}</td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</body>
+</html>

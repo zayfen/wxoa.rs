@@ -1,0 +1,9 @@
+[global]
+template_dir = "templates"
+
+[global.databases.bottle_zoa]
+url = "mysql://bottle_zoa:bottle_zoa@10.96.155.202/bottle_zoa"
+
+[development]
+address = "127.0.0.1"
+port = 8000
