@@ -7,3 +7,11 @@ url = "mysql://bottle_zoa:bottle_zoa@10.96.155.202/bottle_zoa"
 [development]
 address = "127.0.0.1"
 port = 8000
+
+[production]
+address = "127.0.0.1"
+port = 8000
+secret_key = "QZ2Yp4vpYhrD2PQCD50y2e3cWGzS/nn4/7nWcXz/FFI="
+keep_alive = 5
+read_timeout = 5
+write_timeout = 5
