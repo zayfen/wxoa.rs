@@ -2,9 +2,9 @@ extern crate actix_rt;
 extern crate tokio_test;
 
 macro_rules! arun {
-  ($e:expr) => {
-    tokio_test::block_on($e)
-  };
+    ($e:expr) => {
+        tokio_test::block_on($e)
+    };
 }
 
 // #[actix_rt::test]
@@ -15,8 +15,8 @@ macro_rules! arun {
 
 #[test]
 fn test_send_sms() {
-  use sms_service::send_sms;
-  send_sms("15927459238".to_owned());
+    use sms_service::send_sms;
+    send_sms("15927459238".to_owned());
 }
 
 // #[test]

@@ -7,16 +7,14 @@ extern crate rocket_contrib;
 extern crate diesel;
 #[macro_use]
 extern crate lazy_static;
-#[macro_use]
-extern crate diesel_migrations;
 extern crate regex;
 extern crate sms_service;
 
 mod commands_handlers;
+mod datetime_utils;
 mod models;
 mod schema;
 mod wx_utils;
-mod datetime_utils;
 
 use crate::models::UserInfo;
 use commands_handlers::dispatch_command;
@@ -57,9 +55,10 @@ fn validate(fields: Form<CallbackQuery>) -> String {
 }
 
 #[post("/callback", format = "text/xml", data = "<msg>")]
-fn handle_message(conn: DbConn, msg: String) -> String {
+fn handle_message(conn: DbConn, msg: rocket::Data) -> String {
   // println!("msg from wx: {:?}", msg);
-  if let Some(map) = parse_msg(&msg.to_owned()) {
+  let msg = std::str::from_utf8(msg.peek()).unwrap().to_owned();
+  if let Some(map) = parse_msg(&msg) {
     let msg_type: String = map["MsgType"].clone();
     let mut response_msg: String = "".to_owned();
 

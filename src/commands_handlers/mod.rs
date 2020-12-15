@@ -1,9 +1,9 @@
+use crate::datetime_utils::now_date;
 use crate::models::{UserDetailsInfo, UserInfo};
 use crate::DbConn;
 use regex::Regex;
 use sms_service::{check_auth_code, send_sms_async};
 use std::collections::HashMap;
-use crate::datetime_utils::now_date;
 
 #[derive(Copy, Clone)]
 enum UserState {
@@ -68,21 +68,6 @@ fn update_user_state(conn: &DbConn, open_id: &String, state: UserState) -> bool 
   }
 }
 
-fn update_user_auth_code(conn: &DbConn, open_id: &String, auth_code: &String) -> bool {
-  let user_result: diesel::QueryResult<UserInfo> = UserInfo::get_user_info_by_openid(conn, open_id);
-  if let Ok(mut user) = user_result {
-    user.f_remark = Some(auth_code.to_string());
-    let rows_count = UserInfo::update_user_info(conn, user.clone());
-    println!(
-      "change_user_auth_code: {:?}; affected_rows: {:?}",
-      &user, &rows_count
-    );
-    return rows_count.is_ok();
-  } else {
-    return false;
-  }
-}
-
 fn update_user_mobile(conn: &DbConn, open_id: &String, mobile: &String) -> bool {
   let user_result: diesel::QueryResult<UserInfo> = UserInfo::get_user_info_by_openid(conn, open_id);
   if let Ok(mut user) = user_result {
@@ -115,9 +100,9 @@ fn handle_before_register(conn: &DbConn, open_id: &String) -> String {
 // 等待输入手机号
 fn handle_registering_waiting_mobile(conn: &DbConn, open_id: &String, mobile: &String) -> String {
   lazy_static! {
-    static ref MobileRE: Regex = Regex::new(r"^1\d{10}$").unwrap();
+    static ref MOBILE_RE: Regex = Regex::new(r"^1\d{10}$").unwrap();
   }
-  let valid_mobile = MobileRE.is_match(mobile);
+  let valid_mobile = MOBILE_RE.is_match(mobile);
   if valid_mobile {
     // 发送验证码
     send_sms_async(mobile.clone());
