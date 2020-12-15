@@ -16,6 +16,7 @@ mod commands_handlers;
 mod models;
 mod schema;
 mod wx_utils;
+mod datetime_utils;
 
 use crate::models::UserInfo;
 use commands_handlers::dispatch_command;

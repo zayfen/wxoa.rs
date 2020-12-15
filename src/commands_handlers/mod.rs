@@ -3,6 +3,7 @@ use crate::DbConn;
 use regex::Regex;
 use sms_service::{check_auth_code, send_sms_async};
 use std::collections::HashMap;
+use crate::datetime_utils::now_date;
 
 #[derive(Copy, Clone)]
 enum UserState {
@@ -149,7 +150,7 @@ fn handle_registering_waiting_authcode(
     if check_auth_code(mobile, auth_code).is_ok() {
       // 验证成功
       update_user_state(conn, open_id, UserState::CompleteRegister);
-      return String::from("注册成功！");
+      return String::from("注册成功！\n 您可以输入[年假]两个字进行查询！");
     } else {
       // 验证失败
       update_user_state(conn, open_id, UserState::RegisteringWaitForMobile);
@@ -174,9 +175,14 @@ fn handle_query_days(conn: &DbConn, open_id: &String) -> String {
         let name = details.f_name;
         let annual_leave_days = details.f_annual_leave_days;
         let rest_days = details.f_rest_days;
+
+        let today = now_date();
+        let today = format!("{}年{}月{}日", today.0, today.1, today.2);
+        // TODO: 截止日期需要动态计算
         format!(
-          "{}您好，您的年假剩余{}天，调休剩余{}天",
+          "{}您好，截止{}您的年假剩余{}天，调休剩余{}天, 以上假期将于2021年3月31日失效，请合理安排假期并在有效期内休完，若有疑问请私信罗珏",
           name.unwrap_or(mobile),
+          today,
           annual_leave_days,
           rest_days
         )
