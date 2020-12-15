@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-export OPENSSL_LIB_DIR=/home/zayfen/Github/openssl/
+# export OPENSSL_LIB_DIR=/lib64/
 
-export OPENSSL_INCLUDE_DIR=/home/zayfen/Github/openssl/include/
+# export OPENSSL_INCLUDE_DIR=/usr/include/
 
-cargo build --release  --target=x86_64-unknown-linux-musl   
+rustup run nightly cargo build --release --target=x86_64-unknown-linux-musl   
