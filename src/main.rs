@@ -7,7 +7,9 @@ extern crate rocket_contrib;
 extern crate diesel;
 #[macro_use]
 extern crate lazy_static;
+extern crate calamine;
 extern crate regex;
+extern crate rocket_multipart_form_data;
 extern crate sms_service;
 
 mod commands_handlers;
@@ -16,11 +18,19 @@ mod models;
 mod schema;
 mod wx_utils;
 
-use crate::models::UserInfo;
+use crate::models::UserDetailsInfo;
+use calamine::{open_workbook, Error, RangeDeserializerBuilder, Reader, Xlsx};
 use commands_handlers::dispatch_command;
+use rocket::http::ContentType;
 use rocket::request::Form;
+use rocket::Data;
 use rocket_contrib::databases::diesel as rocket_diesel;
 use rocket_contrib::templates::Template;
+use rocket_multipart_form_data::mime;
+use rocket_multipart_form_data::{
+  MultipartFormData, MultipartFormDataError, MultipartFormDataField, MultipartFormDataOptions,
+};
+use std::io::BufReader;
 use wx_utils::parse_xml_msg::{build_text_msg, parse_msg};
 
 #[database("bottle_zoa")]
@@ -29,14 +39,66 @@ pub struct DbConn(rocket_diesel::MysqlConnection);
 #[derive(serde::Serialize)]
 pub struct Noop {}
 
+pub struct ExcelRow(String, String, String, String, String, String);
+
 #[get("/")]
 fn index(conn: DbConn) -> Template {
-  let data = UserInfo::all_user_info(&conn);
+  let data = UserDetailsInfo::all_user_details_info(&conn);
   println!("all users info: {:?}", &data);
   if data.is_ok() {
     Template::render("index", &data.unwrap())
   } else {
     Template::render("index", &Noop {})
+  }
+}
+
+#[post("/upload", data = "<data>")]
+fn upload(content_type: &ContentType, data: Data) -> Result<String, String> {
+  dbg!(content_type);
+  let options =
+    MultipartFormDataOptions::with_multipart_form_data_fields(vec![MultipartFormDataField::file(
+      "excel",
+    )
+    .size_limit(32 * 1024 * 1024)]);
+  dbg!("on upload post");
+  dbg!(&options);
+  let mut multipart_form_data = match MultipartFormData::parse(content_type, data, options) {
+    Ok(multipart_form_data) => multipart_form_data,
+    Err(err) => match err {
+      MultipartFormDataError::DataTooLargeError(_) => {
+        return Err("The file is too large".to_owned());
+      }
+      MultipartFormDataError::DataTypeError(_) => {
+        dbg!(err);
+        return Err("The file is not an excel.".to_owned());
+      }
+      _ => panic!("{:?}", err),
+    },
+  };
+
+  let excel = multipart_form_data.files.get("excel");
+  match excel {
+    Some(mut excels) => {
+      let file_excel = &excels[0];
+      let path = &file_excel.path;
+      dbg!(path);
+      let mut workbook: Xlsx<_> = open_workbook(path).expect("Cannot open file");
+      if let Some(Ok(range)) = workbook.worksheet_range("Sheet1") {
+        let mut iter = RangeDeserializerBuilder::new()
+          .from_range(&range)
+          .expect(&"parse excel error".to_owned());
+        while let Some(r) = iter.next() {
+          let (id, name, mobile, day1, day2, date): (i32, String, String, f64, f64, String) =
+            r.expect("parse excel error");
+          println!(
+            "{} :: {} ::  {} ::  {} :: {} :: {}",
+            id, name, mobile, day1, day2, date
+          );
+        }
+      }
+      Ok("success".to_owned())
+    }
+    None => Err("empty file".to_owned()),
   }
 }
 
@@ -97,6 +159,6 @@ fn main() {
   rocket::ignite()
     .attach(DbConn::fairing())
     .attach(Template::fairing())
-    .mount("/", routes![index, validate, handle_message])
+    .mount("/", routes![index, validate, handle_message, upload])
     .launch();
 }

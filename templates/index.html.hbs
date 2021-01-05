@@ -1,43 +1,70 @@
 <!DOCTYPE html>
 <html lang="zh">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>瓶子人力管理系统</title>
-</head>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.0/dist/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <title>瓶子人力管理系统</title>
+  </head>
 
-<style>
-  table, td {
-    border: 1px solid #333;
-  }
-</style>
+  <style>
+    table, td {
+      border: 1px solid #333;
+    }
+  </style>
 
-<body>
-  <table style="border: 1px solid #333">
-    <thead>
-      <tr>
-        <th>OpenId</th>
-        <th>姓名</th>
-        <th>手机</th>
-        <th>年假</th>
-        <th>调休</th>
-        <th>状态</th>
-        <th>备注</th>
-      </tr>
-    </thead>
-    <tbody>
-      {{#each this}}
-        <tr>
-          <td>{{f_open_id}}</td>
-          <td>{{f_name}}</td>
-          <td>{{f_mobile}}</td>
-          <td>{{f_annual_leave_days}}</td>
-          <td>{{f_rest_days}}</td>
-          <td>{{f_state}}</td>
-          <td>{{f_remark}}</td>
-        </tr>
-      {{/each}}
-    </tbody>
-  </table>
-</body>
+  <body>
+    <div class="container">
+      <div class="row">
+
+        <!-- table data -->
+        <div class="col">
+          <table style="border: 1px solid #333">
+            <thead>
+              <tr>
+                <th>姓名</th>
+                <th>手机</th>
+                <th>年假</th>
+                <th>调休</th>
+                <th>更新日期</th>
+                <th>备注</th>
+              </tr>
+            </thead>
+            <tbody>
+              {{#each this}}
+                <tr>
+                  <td>{{f_name}}</td>
+                  <td>{{f_mobile}}</td>
+                  <td>{{f_annual_leave_days}}</td>
+                  <td>{{f_rest_days}}</td>
+                  <td>{{f_datetime}}</td>
+                  <td>{{f_remark}}</td>
+                </tr>
+              {{/each}}
+            </tbody>
+          </table>      
+        </div>
+
+        <!-- upload -->
+        <div class="col">
+          <form action="/upload" method="POST" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" enctype="multipart/form-data">
+            <div class="form-group">
+              <label for="excel-file">请选择Excel</label>
+              <input id="excel-file" name="excel" type="file" class="form-control-file" formenctype="multipart/form-data">
+              
+              <small class="form-text text-muted">
+                Excel必须符合如下规范：<br>
+                1. excel只能依次有[姓名]  [手机号]  [年假]  [调休] [统计日期] [备注]这6列 <br>
+                2. excel不能有标题行<br>
+                3. excel的列的顺序严格遵守 [姓名]  [手机号]  [年假]  [调休] [统计日期] [备注] 这个顺序 <br>
+              </small>
+
+              <button type="submit" class="btn btn-primary my-1">上传</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    
+  </body>
 </html>
