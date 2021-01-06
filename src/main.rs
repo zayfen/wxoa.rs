@@ -14,23 +14,22 @@ extern crate sms_service;
 
 mod commands_handlers;
 mod datetime_utils;
+mod excel_utils;
 mod models;
+mod multipart_utils;
 mod schema;
 mod wx_utils;
 
 use crate::models::UserDetailsInfo;
-use calamine::{open_workbook, Error, RangeDeserializerBuilder, Reader, Xlsx};
 use commands_handlers::dispatch_command;
+use excel_utils::extract_rows;
+use multipart_utils::extract_files;
 use rocket::http::ContentType;
 use rocket::request::Form;
 use rocket::Data;
 use rocket_contrib::databases::diesel as rocket_diesel;
+use rocket_contrib::serve::StaticFiles;
 use rocket_contrib::templates::Template;
-use rocket_multipart_form_data::mime;
-use rocket_multipart_form_data::{
-  MultipartFormData, MultipartFormDataError, MultipartFormDataField, MultipartFormDataOptions,
-};
-use std::io::BufReader;
 use wx_utils::parse_xml_msg::{build_text_msg, parse_msg};
 
 #[database("bottle_zoa")]
@@ -53,53 +52,46 @@ fn index(conn: DbConn) -> Template {
 }
 
 #[post("/upload", data = "<data>")]
-fn upload(content_type: &ContentType, data: Data) -> Result<String, String> {
+fn upload(conn: DbConn, content_type: &ContentType, data: Data) -> Result<String, String> {
   dbg!(content_type);
-  let options =
-    MultipartFormDataOptions::with_multipart_form_data_fields(vec![MultipartFormDataField::file(
-      "excel",
-    )
-    .size_limit(32 * 1024 * 1024)]);
-  dbg!("on upload post");
-  dbg!(&options);
-  let mut multipart_form_data = match MultipartFormData::parse(content_type, data, options) {
-    Ok(multipart_form_data) => multipart_form_data,
-    Err(err) => match err {
-      MultipartFormDataError::DataTooLargeError(_) => {
-        return Err("The file is too large".to_owned());
-      }
-      MultipartFormDataError::DataTypeError(_) => {
-        dbg!(err);
-        return Err("The file is not an excel.".to_owned());
-      }
-      _ => panic!("{:?}", err),
-    },
-  };
-
-  let excel = multipart_form_data.files.get("excel");
-  match excel {
-    Some(mut excels) => {
-      let file_excel = &excels[0];
-      let path = &file_excel.path;
-      dbg!(path);
-      let mut workbook: Xlsx<_> = open_workbook(path).expect("Cannot open file");
-      if let Some(Ok(range)) = workbook.worksheet_range("Sheet1") {
-        let mut iter = RangeDeserializerBuilder::new()
-          .from_range(&range)
-          .expect(&"parse excel error".to_owned());
-        while let Some(r) = iter.next() {
-          let (id, name, mobile, day1, day2, date): (i32, String, String, f64, f64, String) =
-            r.expect("parse excel error");
-          println!(
-            "{} :: {} ::  {} ::  {} :: {} :: {}",
-            id, name, mobile, day1, day2, date
-          );
-        }
-      }
-      Ok("success".to_owned())
+  let files = extract_files("excel", &std::sync::Arc::from("excel"), content_type, data)
+    .expect("no upload files");
+  let file_excel = &files[0];
+  let path = &file_excel.path;
+  // (姓名，手机号，年假，调休，统计日期，备注)
+  type RowType = (String, String, f64, f64, String, String);
+  let rows: Vec<RowType> = extract_rows(path).expect("extract_rows error");
+  for row in &rows {
+    match UserDetailsInfo::insert_user_details(
+      &conn,
+      UserDetailsInfo {
+        f_name: Some(row.0.clone()),
+        f_mobile: row.1.clone(),
+        f_annual_leave_days: row.2 as f32,
+        f_rest_days: row.3 as f32,
+        f_datetime: row.4.clone(),
+        f_remark: Some(row.5.clone()),
+      },
+    ) {
+      Ok(_) => {}
+      Err(_e) => {}
     }
-    None => Err("empty file".to_owned()),
   }
+
+  Ok(format!(
+    "{:?}",
+    rows
+      .into_iter()
+      .map(|v| UserDetailsInfo {
+        f_name: Some(v.0),
+        f_mobile: v.1,
+        f_annual_leave_days: v.2 as f32,
+        f_rest_days: v.3 as f32,
+        f_datetime: v.4,
+        f_remark: Some(v.5),
+      })
+      .collect::<Vec<UserDetailsInfo>>()
+  ))
 }
 
 #[derive(Debug, Clone, FromForm)]
@@ -154,11 +146,21 @@ fn handle_message(conn: DbConn, msg: rocket::Data) -> String {
   }
 }
 
+#[catch(404)]
+fn not_found(req: &rocket::Request) -> String {
+  format!("Sorry, '{}' is not a valid path.", req.uri())
+}
+
 fn main() {
   println!("Hello, world!");
   rocket::ignite()
     .attach(DbConn::fairing())
     .attach(Template::fairing())
     .mount("/", routes![index, validate, handle_message, upload])
+    .mount(
+      "/",
+      StaticFiles::from(concat!(env!("CARGO_MANIFEST_DIR"), "/static")),
+    )
+    .register(catchers![not_found])
     .launch();
 }

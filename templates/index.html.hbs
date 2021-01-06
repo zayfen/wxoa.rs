@@ -8,25 +8,88 @@
   </head>
 
   <style>
-    table, td {
-      border: 1px solid #333;
+    
+    table {
+      border: 1px solid #ccc;
+      width: 100%;
+      margin:0;
+      padding:0;
+      border-collapse: collapse;
+      border-spacing: 0;
     }
+    
+    table::-webkit-scrollbar {
+      width: 5px;
+    }
+    table::-webkit-scrollbar-thumb {
+      width: 5px;
+      border-radius: 2px;
+      background-color: #2c80ff;
+    }
+    
+    table th, table td {
+      padding: 10px;
+      text-align: center;
+    }
+
+    table th {
+      text-transform: uppercase;
+      font-size: 14px;
+      letter-spacing: 1px;
+    }
+
+    @media screen and (max-width: 600px) {
+
+      table {
+        border: 0;
+      }
+
+      table thead {
+        display: none;
+      }
+
+      table tr {
+        margin-bottom: 10px;
+        display: block;
+        border-bottom: 2px solid #ddd;
+      }
+
+      table td {
+        display: block;
+        text-align: right;
+        font-size: 13px;
+        border-bottom: 1px dotted #ccc;
+      }
+
+      table td:last-child {
+        border-bottom: 0;
+      }
+
+      table td:before {
+        content: attr(data-label);
+        float: left;
+        text-transform: uppercase;
+        font-weight: bold;
+      }
+    }
+
   </style>
 
   <body>
+    <h1 class="text-center">瓶子人力管理系统</h1>
     <div class="container">
       <div class="row">
 
         <!-- table data -->
-        <div class="col">
-          <table style="border: 1px solid #333">
+        <div class="col-7">
+          <table style="display: inline-block;border: 1px solid #333; max-height: 800px;overflow: auto;">
             <thead>
               <tr>
                 <th>姓名</th>
                 <th>手机</th>
-                <th>年假</th>
-                <th>调休</th>
-                <th>更新日期</th>
+                <th>年假(天)</th>
+                <th>调休(天)</th>
+                <th>更新日期(YYYY/MM/DD)</th>
                 <th>备注</th>
               </tr>
             </thead>
@@ -42,22 +105,36 @@
                 </tr>
               {{/each}}
             </tbody>
-          </table>      
+          </table>
         </div>
 
         <!-- upload -->
-        <div class="col">
-          <form action="/upload" method="POST" accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" enctype="multipart/form-data">
+        <div class="col-5">
+          <form
+            action="/upload"
+            method="POST"
+            accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+            enctype="multipart/form-data"
+            target="_blank"
+          >
             <div class="form-group">
               <label for="excel-file">请选择Excel</label>
-              <input id="excel-file" name="excel" type="file" class="form-control-file" formenctype="multipart/form-data">
+              <input
+                id="excel-file"
+                name="excel"
+                type="file"
+                class="form-control-file"
+                formenctype="multipart/form-data"
+              >
               
               <small class="form-text text-muted">
                 Excel必须符合如下规范：<br>
                 1. excel只能依次有[姓名]  [手机号]  [年假]  [调休] [统计日期] [备注]这6列 <br>
                 2. excel不能有标题行<br>
                 3. excel的列的顺序严格遵守 [姓名]  [手机号]  [年假]  [调休] [统计日期] [备注] 这个顺序 <br>
+                <image src="/images/excel-format-sample.png">
               </small>
+              
 
               <button type="submit" class="btn btn-primary my-1">上传</button>
             </div>
